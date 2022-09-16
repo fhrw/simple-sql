@@ -14,6 +14,7 @@ type service struct {
 }
 
 func main() {
+	fmt.Println("running...")
 	srv := service{}
 
 	// set up db connection
@@ -36,13 +37,7 @@ func main() {
 func (s *service) handleRoot(w http.ResponseWriter, _ *http.Request) {
 	fmt.Printf("got / request\n")
 
-	// make db call
-	query := "select * from students"
-	students, err := s.db.Query(query)
-	if err != nil {
-		panic(err)
-	}
-	io.WriteString(w, "This is my website!\n")
+	io.WriteString(w, "SQL server for timetable program!\n")
 }
 
 func (s *service) handleAllocate(w http.ResponseWriter, _ *http.Request) {
@@ -51,4 +46,5 @@ func (s *service) handleAllocate(w http.ResponseWriter, _ *http.Request) {
 	// make db call
 
 	io.WriteString(w, "some allocation here\n")
+	io.WriteString(w, "something else here \n")
 }
