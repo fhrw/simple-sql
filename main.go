@@ -77,10 +77,6 @@ func (s *service) handleList(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *service) handleAdd(w http.ResponseWriter, r *http.Request) {
-	method := r.Method
-	if method != "POST" {
-		fmt.Printf("expected a post request and did not receive one \n")
-	}
 	// work out how to send JSON or something as POST request
 	currStudent := Student{Id: 666, Name: "doris d"}
 	insertQuery := `INSERT INTO students VALUES ($1, $2)`
