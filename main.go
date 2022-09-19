@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,11 @@ import (
 
 type service struct {
 	db *sql.DB
+}
+
+type Student struct {
+	Id   int
+	Name string
 }
 
 func main() {
@@ -27,6 +33,8 @@ func main() {
 
 	http.HandleFunc("/", srv.handleRoot)
 	http.HandleFunc("/allocate", srv.handleAllocate)
+	http.HandleFunc("/list", srv.handleList)
+	http.HandleFunc("/add", srv.handleAdd)
 
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
@@ -46,5 +54,38 @@ func (s *service) handleAllocate(w http.ResponseWriter, _ *http.Request) {
 	// make db call
 
 	io.WriteString(w, "some allocation here\n")
-	io.WriteString(w, "something else here \n")
+}
+
+func (s *service) handleList(w http.ResponseWriter, _ *http.Request) {
+	fmt.Printf("got /list request\n")
+	query := `SELECT * from STUDENTS`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		panic(err)
+	}
+	var allStudents = []*Student{}
+	for rows.Next() {
+		s := new(Student)
+		rows.Scan(&s.Id, &s.Name)
+		allStudents = append(allStudents, s)
+	}
+
+	if err := json.NewEncoder(w).Encode(allStudents); err != nil {
+		panic(err)
+	}
+}
+
+func (s *service) handleAdd(w http.ResponseWriter, r *http.Request) {
+	method := r.Method
+	if method != "POST" {
+		fmt.Printf("expected a post request and did not receive one \n")
+	}
+	// work out how to send JSON or something as POST request
+	currStudent := Student{Id: 666, Name: "doris d"}
+	insertQuery := `INSERT INTO students VALUES ($1, $2)`
+	_, err := s.db.Exec(insertQuery, currStudent.Id, currStudent.Name)
+	if err != nil {
+		panic(err)
+	}
 }
