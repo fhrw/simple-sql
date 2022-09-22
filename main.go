@@ -19,6 +19,11 @@ type Student struct {
 	Name string
 }
 
+type Constraint struct {
+	Id   int
+	Slot string
+}
+
 func main() {
 	fmt.Println("running...")
 	srv := service{}
@@ -35,6 +40,7 @@ func main() {
 	http.HandleFunc("/allocate", srv.handleAllocate)
 	http.HandleFunc("/list", srv.handleList)
 	http.HandleFunc("/add", srv.handleAdd)
+	http.HandleFunc("/addConstraint", srv.handleAddConstraint)
 
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
@@ -78,10 +84,44 @@ func (s *service) handleList(w http.ResponseWriter, _ *http.Request) {
 
 func (s *service) handleAdd(w http.ResponseWriter, r *http.Request) {
 	// work out how to send JSON or something as POST request
-	currStudent := Student{Id: 666, Name: "doris d"}
-	insertQuery := `INSERT INTO students VALUES ($1, $2)`
-	_, err := s.db.Exec(insertQuery, currStudent.Id, currStudent.Name)
+	var stu Student
+
+	err := json.NewDecoder(r.Body).Decode(&stu)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	query, err := s.db.Prepare("insert into students(name) values(?)")
 	if err != nil {
 		panic(err)
 	}
+	res, err := query.Exec(stu.Name)
+	id, err := res.LastInsertId()
+	if err != nil {
+		panic(err)
+	}
+	io.WriteString(w, "wrote to db "+fmt.Sprint(id)+"\n")
+}
+
+func (s *service) handleAddConstraint(w http.ResponseWriter, r *http.Request) {
+	var cstr Constraint
+
+	err := json.NewDecoder(r.Body).Decode(&cstr)
+	if err != nil {
+		panic(err)
+	}
+
+	query, err := s.db.Prepare("insert into constraints(id, name) values(?,?)")
+	if err != nil {
+		panic(err)
+	}
+
+	res, err := query.Exec(cstr.Id, cstr.Slot)
+	if err != nil {
+		panic(err)
+	}
+	_ = res
+
+	io.WriteString(w, "wrote constraint to db\n")
 }
